@@ -1,0 +1,28 @@
+#!name=中国移动签到
+#!desc=移动营业厅每日签到。打开 APP 活动页自动抓 Cookie（仅 TOKEN 变化才通知）。定时任务可在脚本列表里手动执行。
+#!author=fengci
+#!homepage=https://github.com/fengci/scripts
+#!tag=签到,中国移动
+
+[Argument]
+cookie = input,"",tag=Cookie,desc=可选。完整 Cookie（需含 QWHD_SESSION_TOKEN）。留空则使用自动抓取的值
+enabled = switch,true,tag=启用签到
+cronExpr = input,"10 8 * * *",tag=定时表达式,desc=默认每天 8:10
+
+[General]
+# Fake-IP 下必须走真实 IP，否则 $httpClient 直连会超时
+real-ip = wx.10086.cn,*.10086.cn
+
+[Rule]
+DOMAIN,wx.10086.cn,DIRECT
+DOMAIN-SUFFIX,10086.cn,DIRECT
+
+[Script]
+# 自动抓 Cookie（后台静默；仅 SESSION_TOKEN 变化时弹一次通知）
+http-request ^https://wx\.10086\.cn/qwhdhub/ script-path=https://raw.githubusercontent.com/fengci/scripts/main/loon/cmcc_checkin.js, tag=中国移动签到Cookie, requires-body=false, timeout=10, enable=true
+
+# 定时签到（也可在脚本详情里点「运行」手动执行，无需单独 generic）
+cron {cronExpr} script-path=https://raw.githubusercontent.com/fengci/scripts/main/loon/cmcc_checkin.js, tag=中国移动签到, timeout=60, argument={cookie}, enable={enabled}
+
+[Mitm]
+hostname = wx.10086.cn
